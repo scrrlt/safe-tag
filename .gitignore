@@ -1,0 +1,109 @@
+############################################################
+# Python / Environment
+############################################################
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.DS_Store
+.env
+*.whl
+
+############################################################
+# Editor / OS
+############################################################
+*.swp
+*.log
+Thumbs.db
+desktop.ini
+.vscode/
+.vs/
+.idea/
+
+############################################################
+# Packaging / Build Artifacts
+############################################################
+dist/
+build/
+*.egg-info/
+*.egg
+
+############################################################
+# Caches / Temp Data
+############################################################
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.eslintcache
+
+############################################################
+# Local Data & Embedding Outputs
+############################################################
+*.jsonl
+!examples/*.jsonl
+data/
+tmp/
+local_outputs/
+prediction-*.jsonl
+
+# Note: Check if you need 'docs' for GitHub Pages hosting. 
+# If so, remove the line below.
+docs/
+
+############################################################
+# Credentials / Security
+############################################################
+*.pem
+*.key
+*.crt
+*.cert
+secrets*/
+apikeys*/
+.env.local
+.env.*.local
+
+############################################################
+# Jupyter
+############################################################
+*.ipynb
+
+############################################################
+# Docker
+############################################################
+**/.dockerignore.swp
+
+############################################################
+# Node / Frontend (Portfolio V2 Specifics)
+############################################################
+node_modules/
+.pnpm-store
+*.tsbuildinfo
+
+# Playwright & Testing Artifacts
+test-results/
+playwright-report/
+test-results.json
+test-duration-chart.png
+
+# Temporary Debug Scripts
+debug-lodash*
+
+# Personal Notes / Changelogs
+.changes/
+
+############################################################
+# Misc Large or Binary Files
+############################################################
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.orig
+*.tmp

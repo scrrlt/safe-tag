@@ -1,0 +1,43 @@
+{
+  "name": "safe-tag",
+  "version": "1.0.0",
+  "description": "A resilient, zero-dependency alternative to Object.prototype.toString that never crashes.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean --minify --sourcemap",
+    "pretest": "npm run build",
+    "test": "node test/index.test.js",
+    "prebench": "npm run build",
+    "bench": "node bench/index.js",
+    "prepublishOnly": "npm run test && npm run build"
+  },
+  "keywords": [
+    "toStringTag",
+    "safe",
+    "proxy",
+    "resilient",
+    "type-check"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "sideEffects": false,
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
