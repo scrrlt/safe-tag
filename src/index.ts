@@ -10,24 +10,20 @@ const symToStringTag =
 const nativeToString = Object.prototype.toString;
 const getOwnDescriptor = Object.getOwnPropertyDescriptor;
 const defineProperty = Object.defineProperty;
-const hasOwn = Object.prototype.hasOwnProperty;
 
 /**
  * Safely gets the string tag of a value (e.g. "[object Object]", "[object Array]").
- * * Guarantees:
+ * Guarantees:
  * 1. Never throws.
  * 2. Returns a string.
  * 3. Returns the "raw" tag (unmasked) if and only if it is safe to do so.
  */
 export default function safeTag(value: any): string {
-  // 1. Null/Undefined check
   if (value == null) {
     return value === undefined ? "[object Undefined]" : "[object Null]";
   }
 
-  // 2. FAST PATH: Primitives and objects without OWN Symbol.toStringTag.
-  // We check typeof to avoid boxing primitives or triggering 'in' checks on them.
-  // We check hasOwn because we only care about masking OWN properties (mirroring Lodash).
+  // For primitives or environments without Symbol support, the fast path is sufficient.
   if (
     !symToStringTag ||
     (typeof value !== "object" && typeof value !== "function")
@@ -35,25 +31,10 @@ export default function safeTag(value: any): string {
     return safeNativeString(value);
   }
 
-  // Check if object has own Symbol.toStringTag property safely
-  let ownsTag: boolean;
-  try {
-    ownsTag = hasOwn.call(value, symToStringTag);
-  } catch (e) {
-    // hasOwn.call failed (e.g., revoked proxy), use safe fallback
-    return safeNativeString(value);
-  }
-
-  if (!ownsTag) {
-    return safeNativeString(value);
-  }
-
-  // 3. EXOTIC PATH: Object has a custom OWN tag. Attempt to unmask it.
+  // For objects, attempt the unmasking logic, but fall back to a safe call.
   try {
     return getRawTag(value);
   } catch (e) {
-    // 4. FALLBACK: Masking/Restore failed or operation was unsafe.
-    // Return the safe, visible tag (which might be the custom tag, or [object Object]).
     return safeNativeString(value);
   }
 }
@@ -63,28 +44,25 @@ export default function safeTag(value: any): string {
  * Throws if the operation is unsafe, blocked, or if RESTORE fails.
  */
 export function getRawTag(value: any): string {
-  // Guard: Environment support
   if (!symToStringTag) {
     return nativeToString.call(value);
   }
 
-  // Step 1: Get Descriptor Safely
   let descriptor: PropertyDescriptor | undefined;
   try {
     descriptor = getOwnDescriptor(value, symToStringTag);
   } catch (e) {
-    // Could not get descriptor (hostile proxy), bubble error to safeTag
+    // If descriptor lookup fails (e.g., revoked proxy), we can't proceed.
     throw e;
   }
 
-  // Step 2: Validation
-  // If not configurable, we cannot mask. Return native string immediately.
-  // Note: If nativeToString invokes a throwing getter here, it bubbles to safeTag.
-  if (descriptor && !descriptor.configurable) {
+  // If there's no own descriptor, or it's not configurable, we can't unmask.
+  // The native call is the only safe option.
+  if (!descriptor || !descriptor.configurable) {
     return nativeToString.call(value);
   }
 
-  // Step 3: Mask (Set to undefined to reveal underlying tag)
+  // Mask the tag to reveal the underlying one.
   try {
     defineProperty(value, symToStringTag, {
       configurable: true,
@@ -93,46 +71,97 @@ export function getRawTag(value: any): string {
       writable: true,
     });
   } catch (e) {
-    throw e; // Cannot mask
+    throw e; // Cannot mask, abort.
   }
 
-  // Step 4: Read & Restore
+  // Read the tag and then restore the original descriptor.
+  let tag: string | undefined;
+  let tagRead = false;
+  let nativeError: unknown;
+  let restoreError: unknown;
+
   try {
-    const tag = nativeToString.call(value);
-
-    // Critical: Restoration
     try {
-      if (descriptor) {
-        defineProperty(value, symToStringTag, descriptor);
-      } else {
-        // Delete the temporary property (should be rare due to hasOwn check)
-        delete value[symToStringTag];
-      }
-    } catch (restoreError) {
-      // Restoration failed. The object is mutated.
-      // We must not return the 'tag' we read, because the object is dirty.
-      // Attempt best-effort cleanup (delete the temporary mask), then fail.
+      tag = nativeToString.call(value);
+      tagRead = true;
+    } catch (e) {
+      // Capture the original nativeToString error but defer the decision
+      // to rethrow until after we attempt restoration.
+      nativeError = e;
+    } finally {
+      // CRITICAL: Ensure restoration happens even if nativeToString throws.
       try {
-        delete value[symToStringTag];
-      } catch (_) {}
-      throw restoreError;
+      if (typeof console !== "undefined") {
+          if (
+            typeof console !== "undefined" &&
+            console &&
+            typeof console.error === "function"
+          ) {
+            console.error(
+              "safe-tag: failed to restore Symbol.toStringTag descriptor after reading tag",
+              restoreError
+            );
+          }
+        }
+      }
     }
-
-    return tag;
-  } catch (e) {
-    // Reading or Restoring failed.
-    throw e;
+  } finally {
+    // No-op: the nested finally has already ensured restoration is attempted.
   }
+
+  // Decide what to do based on whether we successfully read the tag and what failed.
+  if (tagRead) {
+    // At this point, nativeToString has succeeded, so tag is defined.
+    return tag as string;
+  }
+
+  // nativeToString did not succeed (tagRead is false).
+  if (restoreError) {
+    // Both nativeToString and restoration may have failed.
+    if (nativeError) {
+      // Prefer AggregateError when available for richer diagnostics.
+      if (typeof AggregateError === "function") {
+        throw new AggregateError(
+          [nativeError, restoreError],
+          "safe-tag: native toString and restoration both failed"
+        );
+      }
+      const combinedMessage =
+        "safe-tag: native toString and restoration both failed " +
+        "(native error: " +
+        String(nativeError) +
+        ", restore error: " +
+        String(restoreError) +
+        ")";
+      const combined = new Error(combinedMessage);
+      (combined as any).nativeError = nativeError;
+      (combined as any).restoreError = restoreError;
+      throw combined;
+    }
+    // Only restoration failed; propagate that error as before.
+    throw restoreError;
+  }
+
+  if (nativeError) {
+    // Restoration succeeded; rethrow the original nativeToString error.
+    throw nativeError;
+  }
+
+  // Defensive fallback: we neither read a tag nor captured an error.
+  throw new Error(
+    "safe-tag: native toString failed without an error object when tag was not read"
+  );
 }
 
 /**
- * Internal: The final safety net.
- * wrapping Object.prototype.toString in try/catch for Revoked Proxies.
+ * Internal: The final safety net, wrapping Object.prototype.toString in a
+ * try/catch for hostile environments (e.g., revoked proxies).
  */
 function safeNativeString(value: any): string {
   try {
     return nativeToString.call(value);
   } catch (e) {
+    // Fallback for the most hostile cases.
     return "[object Object]";
   }
 }

@@ -1,7 +1,8 @@
 {
   "name": "safe-tag",
   "version": "1.0.0",
-  "description": "A resilient, zero-dependency alternative to Object.prototype.toString that never crashes.",
+  "type": "commonjs",
+  "description": "Zero-dependency utility for safe Object.prototype.toString tagging that never crashes on hostile objects",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -10,31 +11,70 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./fast": {
+      "types": "./dist/fast.d.ts",
+      "import": "./dist/fast.mjs",
+      "require": "./dist/fast.js"
     }
   },
   "files": [
     "dist",
+    "examples",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean --minify --sourcemap",
+    "build": "tsup src/index.ts src/fast.ts --format cjs,esm --dts --clean --minify --sourcemap",
     "pretest": "npm run build",
     "test": "node test/index.test.js",
+    "test:integration": "node test/integration.test.js",
+    "test:all": "npm run test && npm run test:integration",
     "prebench": "npm run build",
     "bench": "node bench/index.js",
-    "prepublishOnly": "npm run test && npm run build"
+    "examples": "node examples/run-examples.js",
+    "prepublishOnly": "npm run test:all && npm run build",
+    "dev": "tsup src/index.ts src/fast.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "security-audit": "npm audit --audit-level moderate",
+    "update-deps": "npm update --save"
   },
   "keywords": [
     "toStringTag",
     "safe",
+    "defensive",
     "proxy",
     "resilient",
-    "type-check"
+    "type-check",
+    "object",
+    "toString",
+    "unmasking",
+    "lodash",
+    "zero-dependency",
+    "typescript",
+    "performance",
+    "security",
+    "cross-realm"
   ],
-  "author": "Your Name",
+  "author": "Scarlet <dev@example.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/safe-tag.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/safe-tag/issues"
+  },
+  "homepage": "https://github.com/username/safe-tag#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "sideEffects": false,
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/username"
+  },
   "devDependencies": {
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
