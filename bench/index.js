@@ -33,7 +33,7 @@ for (const testCase of testCases) {
     }
   }
   const end = performance.now();
-  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
   console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
 }
 
@@ -44,7 +44,7 @@ for (const testCase of testCases) {
     safeTag(testCase.value);
   }
   const end = performance.now();
-  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
   console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
 }
 
@@ -58,7 +58,9 @@ const revokedProxy = (() => {
 const hostileGetter = {};
 Object.defineProperty(hostileGetter, Symbol.toStringTag, {
   configurable: false,
-  get() { throw new Error("Hostile!"); }
+  get() {
+    throw new Error("Hostile!");
+  },
 });
 
 const hostileTests = [
@@ -72,7 +74,7 @@ for (const testCase of hostileTests) {
     safeTag(testCase.value);
   }
   const end = performance.now();
-  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
   console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
 }
 
