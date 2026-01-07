@@ -1,0 +1,25 @@
+# Contributing
+
+## Getting started
+1. Fork the repository and create a feature branch with `git checkout -b feature/<short-description>`.
+2. Install required dependencies as described in the project README.
+3. Keep changes focused; split unrelated updates into separate branches.
+
+## Development workflow
+- Write or update tests alongside your code changes.
+- Run the project linters and test suite before committing.
+- Ensure documentation reflects any new or changed behavior.
+
+## Commit guidelines
+- Follow the `type(scope): summary` convention when possible (for example, `feat(parser): add new tag sanitizer`).
+- Keep commit messages concise and descriptive, explaining the reason for the change.
+- Avoid committing generated files or build artifacts.
+
+## Pull requests
+- Rebase your branch onto the latest main branch before submitting a pull request.
+- Provide a clear summary of the change and list any notable impacts or required follow-up work.
+- Request reviews from relevant maintainers and address feedback promptly.
+
+## Code of conduct
+- Be respectful and constructive in all interactions.
+- Report any issues or concerns through the channels documented in the repository.
