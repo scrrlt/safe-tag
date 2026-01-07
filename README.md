@@ -48,6 +48,16 @@ safeTag(null); // "[object Null]"
 safeTag(undefined); // "[object Undefined]"
 safeTag(revokedProxy); // "[object Object]"
 safeTag({ get [Symbol.toStringTag]() { return "Masked"; } }); // "[object Object]"
+
+// More examples
+safeTag(42); // "[object Number]"
+safeTag("hello"); // "[object String]"
+safeTag([]); // "[object Array]"
+safeTag(new Date()); // "[object Date]"
+safeTag(/regex/); // "[object RegExp]"
+
+// Custom tagged objects (safely unmasked)
+safeTag({ [Symbol.toStringTag]: "Custom" }); // "[object Object]"
 ```
 
 ### Advanced: named export `getRawTag`

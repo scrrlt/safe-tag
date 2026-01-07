@@ -35,10 +35,12 @@ export default function safeTag(value: any): string {
     return safeNativeString(value);
   }
 
+  // Check if object has own Symbol.toStringTag property safely
   let ownsTag: boolean;
   try {
     ownsTag = hasOwn.call(value, symToStringTag);
   } catch (e) {
+    // hasOwn.call failed (e.g., revoked proxy), use safe fallback
     return safeNativeString(value);
   }
 
@@ -71,7 +73,8 @@ export function getRawTag(value: any): string {
   try {
     descriptor = getOwnDescriptor(value, symToStringTag);
   } catch (e) {
-    throw e; // Bubble to safeTag
+    // Could not get descriptor (hostile proxy), bubble error to safeTag
+    throw e;
   }
 
   // Step 2: Validation
@@ -102,7 +105,7 @@ export function getRawTag(value: any): string {
       if (descriptor) {
         defineProperty(value, symToStringTag, descriptor);
       } else {
-        // Should be unreachable due to hasOwn check in safeTag, but safe to have.
+        // Delete the temporary property (should be rare due to hasOwn check)
         delete value[symToStringTag];
       }
     } catch (restoreError) {

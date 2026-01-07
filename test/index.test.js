@@ -81,3 +81,60 @@ test("Defense: Cross-Realm", (t) => {
   // Should treat cross-realm symbol as own property and unmask it
   assert.strictEqual(safeTag(result), "[object Object]");
 });
+
+test("Additional Edge Cases: Symbol Support", (t) => {
+  // Test behavior when Symbol is not available (simulated)
+  const originalSymbol = global.Symbol;
+  delete global.Symbol;
+  
+  // Should fall back to native toString when Symbol is unavailable
+  assert.strictEqual(safeTag({}), "[object Object]");
+  assert.strictEqual(safeTag([]), "[object Array]");
+  
+  // Restore Symbol
+  global.Symbol = originalSymbol;
+});
+
+test("Additional Edge Cases: Function Objects", (t) => {
+  const func = function test() {};
+  func[Symbol.toStringTag] = "CustomFunction";
+  
+  // Should unmask function objects too
+  assert.strictEqual(safeTag(func), "[object Function]");
+});
+
+test("Additional Edge Cases: Deeply Nested Hostile Objects", (t) => {
+  const nested = {
+    level1: {
+      level2: {
+        get [Symbol.toStringTag]() {
+          throw new Error("Deep hostile!");
+        }
+      }
+    }
+  };
+  
+  // Should handle nested objects safely
+  assert.doesNotThrow(() => safeTag(nested));
+  assert.doesNotThrow(() => safeTag(nested.level1));
+  assert.doesNotThrow(() => safeTag(nested.level1.level2));
+});
+
+test("Advanced: getRawTag Direct Testing", (t) => {
+  // Test getRawTag with safe objects
+  assert.strictEqual(getRawTag({}), "[object Object]");
+  assert.strictEqual(getRawTag([]), "[object Array]");
+  
+  // Test getRawTag with custom tag
+  const customObj = { [Symbol.toStringTag]: "Custom" };
+  assert.strictEqual(getRawTag(customObj), "[object Object]");
+  
+  // Test getRawTag throws on hostile objects
+  const hostile = {};
+  Object.defineProperty(hostile, Symbol.toStringTag, {
+    configurable: false,
+    get: () => { throw new Error("Hostile!"); }
+  });
+  
+  assert.throws(() => getRawTag(hostile), /Hostile!/);
+});

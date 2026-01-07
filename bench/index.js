@@ -1,127 +1,79 @@
-/**
- * safe-tag
- * A defensive, zero-dependency utility to get the string tag of any value.
- * Prioritizes safety (never throwing) over exposing hidden "raw" tags.
- * Portions adapted from Lodash (MIT), Copyright OpenJS Foundation.
- */
+// Benchmark for safe-tag
+const { performance } = require("perf_hooks");
+const { default: safeTag, getRawTag } = require("../dist/index.js");
 
-const symToStringTag =
-  typeof Symbol !== "undefined" ? Symbol.toStringTag : undefined;
+const ITERATIONS = 100000;
+
+console.log("=== safe-tag Benchmarks ===");
+console.log(`Running ${ITERATIONS} iterations per test...\n`);
+
+// Test data
+const testCases = [
+  { name: "null", value: null },
+  { name: "undefined", value: undefined },
+  { name: "number", value: 42 },
+  { name: "string", value: "test" },
+  { name: "plain object", value: {} },
+  { name: "array", value: [] },
+  { name: "object with custom tag", value: { [Symbol.toStringTag]: "Custom" } },
+  { name: "Date", value: new Date() },
+];
+
+// Native Object.prototype.toString for comparison
 const nativeToString = Object.prototype.toString;
-const getOwnDescriptor = Object.getOwnPropertyDescriptor;
-const defineProperty = Object.defineProperty;
-const hasOwn = Object.prototype.hasOwnProperty;
 
-/**
- * Safely gets the string tag of a value (e.g. "[object Object]", "[object Array]").
- * * Guarantees:
- * 1. Never throws (swallows errors from revoked proxies, hostile getters, etc).
- * 2. Always returns a string.
- * 3. Returns the "raw" tag (unmasked) only if it is safe to do so.
- */
-export default function safeTag(value: any): string {
-  // 1. Null/Undefined check
-  if (value == null) {
-    return value === undefined ? "[object Undefined]" : "[object Null]";
-  }
-
-  // 2. FAST PATH: Primitives and objects without OWN Symbol.toStringTag.
-  // - Check typeof first to avoid boxing primitives or triggering 'in' checks.
-  // - Check hasOwn because we only care about masking OWN properties.
-  if (
-    !symToStringTag ||
-    (typeof value !== "object" && typeof value !== "function") ||
-    !hasOwn.call(value, symToStringTag)
-  ) {
-    return safeNativeString(value);
-  }
-
-  // 3. EXOTIC PATH: Object has a custom OWN tag. Attempt to unmask it.
-  try {
-    return getRawTag(value);
-  } catch (e) {
-    // 4. FALLBACK: Masking/Restore failed or operation was unsafe.
-    // Return the safe, visible tag.
-    return safeNativeString(value);
-  }
-}
-
-/**
- * Advanced: Attempt to unmask the tag by temporarily unsetting Symbol.toStringTag.
- * WARNING: This function MAY throw if the object is hostile or non-configurable.
- * Only use this if you are implementing your own try/catch logic.
- */
-export function getRawTag(value: any): string {
-  // Guard: Environment support
-  if (!symToStringTag) {
-    return nativeToString.call(value);
-  }
-
-  // Step 1: Get Descriptor Safely
-  let descriptor: PropertyDescriptor | undefined;
-  try {
-    descriptor = getOwnDescriptor(value, symToStringTag);
-  } catch (e) {
-    throw e; // Rethrow original error to preserve stack trace
-  }
-
-  // Step 2: Validation
-  // If not configurable, we cannot mask. Return native string immediately.
-  if (descriptor && !descriptor.configurable) {
-    return nativeToString.call(value);
-  }
-
-  // Step 3: Mask (Set to undefined to reveal underlying tag)
-  try {
-    defineProperty(value, symToStringTag, {
-      configurable: true,
-      enumerable: false,
-      value: undefined,
-      writable: true,
-    });
-  } catch (e) {
-    throw e;
-  }
-
-  // Step 4: Read & Restore
-  try {
-    const tag = nativeToString.call(value);
-
-    // Critical: Restoration
+console.log("--- Baseline: Object.prototype.toString ---");
+for (const testCase of testCases) {
+  const start = performance.now();
+  for (let i = 0; i < ITERATIONS; i++) {
     try {
-      if (descriptor) {
-        defineProperty(value, symToStringTag, descriptor);
-      } else {
-        // Safe because we are protected by hasOwn in the fast path,
-        // but robust enough to handle the edge case where it wasn't own.
-        delete value[symToStringTag];
-      }
-    } catch (restoreError) {
-      // Restoration failed. The object is mutated.
-      // 1. Attempt best-effort cleanup (delete the temporary mask)
-      try {
-        delete value[symToStringTag];
-      } catch (_) {}
-
-      // 2. Fail hard.
-      // We must not return the 'tag' we read, because the object might be corrupted.
-      throw restoreError;
+      nativeToString.call(testCase.value);
+    } catch (e) {
+      // Baseline may throw on hostile objects
     }
-
-    return tag;
-  } catch (e) {
-    throw e;
   }
+  const end = performance.now();
+  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
 }
 
-/**
- * Internal: The final safety net.
- * wrapping Object.prototype.toString in try/catch for Revoked Proxies.
- */
-function safeNativeString(value: any): string {
-  try {
-    return nativeToString.call(value);
-  } catch (e) {
-    return "[object Object]";
+console.log("\n--- safeTag (safe wrapper) ---");
+for (const testCase of testCases) {
+  const start = performance.now();
+  for (let i = 0; i < ITERATIONS; i++) {
+    safeTag(testCase.value);
   }
+  const end = performance.now();
+  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
 }
+
+console.log("\n--- Hostile Object Tests ---");
+const revokedProxy = (() => {
+  const { proxy, revoke } = Proxy.revocable({}, {});
+  revoke();
+  return proxy;
+})();
+
+const hostileGetter = {};
+Object.defineProperty(hostileGetter, Symbol.toStringTag, {
+  configurable: false,
+  get() { throw new Error("Hostile!"); }
+});
+
+const hostileTests = [
+  { name: "revoked proxy", value: revokedProxy },
+  { name: "hostile getter", value: hostileGetter },
+];
+
+for (const testCase of hostileTests) {
+  const start = performance.now();
+  for (let i = 0; i < ITERATIONS; i++) {
+    safeTag(testCase.value);
+  }
+  const end = performance.now();
+  const opsPerSec = (ITERATIONS / (end - start) * 1000).toFixed(0);
+  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
+}
+
+console.log("\n=== Benchmark Complete ===");
