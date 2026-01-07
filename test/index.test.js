@@ -81,3 +81,91 @@ test("Defense: Cross-Realm", (t) => {
   // Should treat cross-realm symbol as own property and unmask it
   assert.strictEqual(safeTag(result), "[object Object]");
 });
+
+test("Defense: Nested Proxy Chain", (t) => {
+  const inner = { [Symbol.toStringTag]: "Inner" };
+  const outer = new Proxy(inner, {
+    getOwnPropertyDescriptor(target, key) {
+      if (key === Symbol.toStringTag) {
+        throw new Error("Nested trap!");
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.doesNotThrow(() => safeTag(outer));
+  // When descriptor lookup throws, falls back to safe native call which shows the visible tag
+  assert.strictEqual(safeTag(outer), "[object Inner]");
+});
+
+test("Defense: Symbol Primitive", (t) => {
+  const sym = Symbol("test");
+  assert.strictEqual(safeTag(sym), "[object Symbol]");
+});
+
+test("Defense: Malicious defineProperty Trap", (t) => {
+  const obj = {};
+  Object.defineProperty(obj, Symbol.toStringTag, {
+    configurable: true,
+    value: "Original",
+  });
+
+  const proxy = new Proxy(obj, {
+    defineProperty(target, key, desc) {
+      if (key === Symbol.toStringTag && desc.value === undefined) {
+        throw new Error("Cannot mask!");
+      }
+      return Reflect.defineProperty(target, key, desc);
+    },
+  });
+
+  assert.doesNotThrow(() => safeTag(proxy));
+  // When masking fails, falls back to safe native call which shows the visible tag
+  assert.strictEqual(safeTag(proxy), "[object Original]");
+});
+
+test("Defense: Throwing toString During Masking", (t) => {
+  const obj = {
+    [Symbol.toStringTag]: "Custom",
+    toString() {
+      throw new Error("toString throws!");
+    },
+  };
+
+  // Should handle toString throwing during the masked state
+  assert.doesNotThrow(() => safeTag(obj));
+  assert.strictEqual(safeTag(obj), "[object Object]");
+});
+
+test("Edge Case: Function with Custom Tag", (t) => {
+  function customFunc() {}
+  customFunc[Symbol.toStringTag] = "CustomFunction";
+
+  // Should unmask to reveal the native function tag
+  assert.strictEqual(safeTag(customFunc), "[object Function]");
+});
+
+test("Edge Case: Built-in with Masked Tag", (t) => {
+  const arr = [];
+  arr[Symbol.toStringTag] = "NotArray";
+
+  // Should unmask to reveal the true Array tag
+  assert.strictEqual(safeTag(arr), "[object Array]");
+});
+
+test("Performance: getRawTag Direct Usage", (t) => {
+  const obj = { [Symbol.toStringTag]: "Custom" };
+
+  // Direct usage should work and unmask
+  assert.strictEqual(getRawTag(obj), "[object Object]");
+
+  // Verify object is restored correctly
+  assert.strictEqual(obj[Symbol.toStringTag], "Custom");
+});
+
+test("Performance: getRawTag Throws on Hostile Objects", (t) => {
+  const { proxy, revoke } = Proxy.revocable({}, {});
+  revoke();
+
+  // getRawTag should throw, unlike safeTag
+  assert.throws(() => getRawTag(proxy), TypeError);
+});
