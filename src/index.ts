@@ -62,6 +62,7 @@ export function getRawTag(value: any): string {
     return nativeToString.call(value);
   }
 
+
   // Mask the tag to reveal the underlying one.
   try {
     defineProperty(value, symToStringTag, {
@@ -71,7 +72,7 @@ export function getRawTag(value: any): string {
       writable: true,
     });
   } catch (e) {
-    throw e; // Cannot mask, abort.
+    throw e;
   }
 
   // Read the tag and then restore the original descriptor.
@@ -88,25 +89,14 @@ export function getRawTag(value: any): string {
       // Capture the original nativeToString error but defer the decision
       // to rethrow until after we attempt restoration.
       nativeError = e;
-    } finally {
-      // CRITICAL: Ensure restoration happens even if nativeToString throws.
-      try {
-      if (typeof console !== "undefined") {
-          if (
-            typeof console !== "undefined" &&
-            console &&
-            typeof console.error === "function"
-          ) {
-            console.error(
-              "safe-tag: failed to restore Symbol.toStringTag descriptor after reading tag",
-              restoreError
-            );
-          }
-        }
-      }
     }
   } finally {
-    // No-op: the nested finally has already ensured restoration is attempted.
+    // CRITICAL: Ensure restoration happens even if nativeToString throws.
+    try {
+      defineProperty(value, symToStringTag, descriptor!);
+    } catch (e) {
+      restoreError = e;
+    }
   }
 
   // Decide what to do based on whether we successfully read the tag and what failed.
@@ -119,24 +109,15 @@ export function getRawTag(value: any): string {
   if (restoreError) {
     // Both nativeToString and restoration may have failed.
     if (nativeError) {
-      // Prefer AggregateError when available for richer diagnostics.
-      if (typeof AggregateError === "function") {
-        throw new AggregateError(
-          [nativeError, restoreError],
-          "safe-tag: native toString and restoration both failed"
-        );
-      }
-      const combinedMessage =
-        "safe-tag: native toString and restoration both failed " +
-        "(native error: " +
-        String(nativeError) +
-        ", restore error: " +
-        String(restoreError) +
-        ")";
-      const combined = new Error(combinedMessage);
-      (combined as any).nativeError = nativeError;
-      (combined as any).restoreError = restoreError;
-      throw combined;
+      // Polyfill AggregateError if not available
+      const _AggregateError: any = typeof globalThis !== "undefined" && typeof (globalThis as any).AggregateError === "function"
+        ? (globalThis as any).AggregateError
+        : function AggregateErrorPolyfill(errors: any[], message: string) {
+            const err = new Error(message);
+            (err as any).errors = errors;
+            return err;
+          };
+      throw new _AggregateError([nativeError, restoreError], "safe-tag: native toString and restoration both failed");
     }
     // Only restoration failed; propagate that error as before.
     throw restoreError;
