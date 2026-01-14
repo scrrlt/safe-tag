@@ -12,14 +12,6 @@ const symToStringTag =
 const getOwnDescriptor = Object.getOwnPropertyDescriptor;
 const defineProperty = Object.defineProperty;
 
-/**
- * Safely gets the string tag of a value (e.g. "[object Object]", "[object Array]").
- *
- * v2 guarantees:
- * 1. Never throws.
- * 2. Never mutates the target value.
- * 3. Respects existing Symbol.toStringTag masks.
- */
 export default function safeTag(value: unknown): string {
   if (value === null) {
     return "[object Null]";
