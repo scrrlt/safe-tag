@@ -73,7 +73,7 @@
   },
   "homepage": "https://github.com/scrrlt/safe-tag#readme",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "sideEffects": false,
   "funding": {
