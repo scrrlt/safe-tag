@@ -1,0 +1,96 @@
+{
+  "name": "@scrrlt/safe-tag",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "Zero-dependency utility for safe Object.prototype.toString tagging that never crashes on hostile objects",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./fast": {
+      "types": "./dist/fast.d.ts",
+      "import": "./dist/fast.mjs",
+      "require": "./dist/fast.js"
+    }
+  },
+  "files": [
+    "dist",
+    "examples",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/fast.ts --format cjs,esm --dts --clean --minify --sourcemap",
+    "pretest": "npm run build",
+    "test": "node test/index.test.js",
+    "test:integration": "node test/integration.test.js",
+    "test:all": "npm run test && npm run test:integration",
+    "test:src": "tsx --tsconfig tsconfig.json test/index.src.test.ts",
+    "test:src:integration": "tsx --tsconfig tsconfig.json test/integration.src.test.ts",
+    "test:src:all": "npm run test:src && npm run test:src:integration",
+    "prebench": "npm run build",
+    "bench": "node bench/index.js",
+    "examples": "node examples/run-examples.js",
+    "prepublishOnly": "npm run test:all && npm run build",
+    "dev": "tsup src/index.ts src/fast.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier . --write",
+    "security-audit": "npm audit --audit-level moderate",
+    "update-deps": "npm update --save"
+  },
+  "keywords": [
+    "toStringTag",
+    "safe",
+    "defensive",
+    "proxy",
+    "resilient",
+    "type-check",
+    "object",
+    "toString",
+    "unmasking",
+    "lodash",
+    "zero-dependency",
+    "typescript",
+    "performance",
+    "security",
+    "cross-realm"
+  ],
+  "author": "Scarlet <scarlet.moore@outlook.com.au>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scrrlt/safe-tag.git"
+  },
+  "bugs": {
+    "url": "https://github.com/scrrlt/safe-tag/issues"
+  },
+  "homepage": "https://github.com/scrrlt/safe-tag#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "sideEffects": false,
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/scrrlt"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.57.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
