@@ -2,7 +2,7 @@
   "name": "@scrrlt/safe-tag",
   "version": "1.0.0",
   "type": "commonjs",
-  "description": "Zero-dependency utility for safe Object.prototype.toString tagging that never crashes on hostile objects",
+  "description": "A zero-dependency utility for retrieving Object.prototype.toString tags. It is designed to handle hostile or exotic objects that cause native implementations to throw exceptions.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -62,7 +62,7 @@
     "security",
     "cross-realm"
   ],
-  "author": "Scarlet <scarlet.moore@outlook.com.au>",
+  "author": "Scarlet Moore <scarlet.moore@outlook.com.au> (https://scrrlt.dev)",
   "license": "MIT",
   "repository": {
     "type": "git",
