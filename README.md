@@ -155,6 +155,12 @@
  - **Tests (dist):** `npm run test:all`
  - **Tests (src, faster dev loop):** `npm run test:src:all`
  - **Benchmarks:** `npm run bench`
+
+ ## Author
+
+**Scarlet Moore**
+- Website: [scarletmoore.dev](https://scrrlt.dev)
+- GitHub: [@scrrlt](https://github.com/scrrlt)
  
  ## License
  
