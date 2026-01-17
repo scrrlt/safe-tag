@@ -1,7 +1,11 @@
 /**
- * safe-tag/fast
+ * @file safe-tag: A zero-dependency utility for safe Object.prototype.toString tagging.
+ * @author Scarlet Moore <scarlet.moore@outlook.com.au> (https://scrrlt.dev)
+ * @license MIT
+ * @see {@link https://github.com/scrrlt/safe-tag|GitHub}
+ * Portions adapted from Lodash (MIT License).
+
  * Minimal, unsafe wrapper around Object.prototype.toString.
- *
  * PERF: Fastest possible implementation.
  * RISK: Will throw on revoked proxies or other hostile objects.
  * USE CASE: Trusted inputs only.
