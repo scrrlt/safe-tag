@@ -1,7 +1,8 @@
 /**
- * safe-tag
- * A defensive, zero-dependency utility to get the string tag of any value.
- * Prioritizes safety (never throwing) over exposing hidden "raw" tags.
+ * @file safe-tag: A zero-dependency utility for safe Object.prototype.toString tagging.
+ * @author Scarlet Moore <scarlet.moore@outlook.com.au> (https://scrrlt.dev)
+ * @license MIT
+ * @see {@link https://github.com/scrrlt/safe-tag|GitHub}
  * Portions adapted from Lodash (MIT License).
  */
 
