@@ -1,14 +1,19 @@
 # Changelog
 
-## 1.0.0 (2026-01-14)
+All notable changes to this project will be documented in this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Features
-* **Defensive Type Checking:** Introduced `safeTag` utility that never throws.
-* **Exotic Object Support:** Handles Revoked Proxies, throwing getters, and non-configurable properties.
-* **Fast Path Optimization:** Primitives and standard objects bypass descriptor logic for near-native performance.
+## [1.0.0] - 2026-01-14
 
-### Implementation Details
-* Zero dependencies.
-* Dual ESM/CJS build.
-* Includes `getRawTag` export for advanced usage.
-* Benchmarked: ~1.05x overhead vs native on fast path.
+### Added
+- Initial public release of `@scrrlt/safe-tag`.
+- Implementation of `safeTag` utility to prevent crashes on hostile/exotic objects.
+- Optimized "Fast Path" for `null` and `undefined` types.
+- Full TypeScript support with generated `.d.ts` files.
+- Dual-build support for ESM and CommonJS via `tsup`.
+- Performance benchmarking suite demonstrating ~30-40M ops/sec on safe paths.
+- Support for handling revoked Proxies without throwing `TypeError`.
+
+### Changed
+- Architectural refactor from v1-alpha to v2-stable to follow "Least Astonishment" principles.
