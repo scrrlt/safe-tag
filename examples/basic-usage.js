@@ -38,11 +38,11 @@ console.log("weakset:", safeTag(new WeakSet()));
 // Custom objects with masked tags
 console.log("\nCustom Objects (Masked Tags):");
 const maskedObject = { [Symbol.toStringTag]: "CustomType" };
-console.log("masked object:", safeTag(maskedObject)); // "[object Object]" - unmasked
+console.log("masked object:", safeTag(maskedObject)); // "[object CustomType]" - respects mask
 
 const maskedArray = [];
 maskedArray[Symbol.toStringTag] = "NotAnArray";
-console.log("masked array:", safeTag(maskedArray)); // "[object Array]" - unmasked
+console.log("masked array:", safeTag(maskedArray)); // "[object NotAnArray]" - respects mask
 
 // Hostile objects (safe handling)
 console.log("\nHostile Objects (Graceful Handling):");

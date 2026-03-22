@@ -142,11 +142,13 @@
  - **Risk:** May cause V8 to de-optimize the object (hidden class changes) due to descriptor mutation.
  - **Side effects:** Temporarily mutates `Symbol.toStringTag` on the object during the read, but is designed to restore the original descriptor and **never throws**. Falls back to `safeTag(value)` if unmasking fails.
  
- ### Performance variant (`safe-tag/fast`)
+ ### Performance variants (`safe-tag/fast`)
  
  For environments where inputs are trusted and performance is prioritized over resilience:
  
  - **`fastTag`**: Minimal wrapper around `Object.prototype.toString.call()`. Fastest, but may throw on revoked proxies or hostile objects.
+ - **`ultraFastTag`**: Zero-check variant that directly calls the native method.
+ - **`cachedTag`**: Uses a `WeakMap` to cache tags for objects. Best for repeated calls on the same objects.
  
  ## Development and testing
  

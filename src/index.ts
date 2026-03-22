@@ -73,3 +73,9 @@ export function unmaskTag(value: unknown): string {
     return safeTag(value);
   }
 }
+
+/**
+ * Alias for unmaskTag.
+ * @deprecated Use unmaskTag instead.
+ */
+export const getRawTag = unmaskTag;
