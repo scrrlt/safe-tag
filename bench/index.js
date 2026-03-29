@@ -1,13 +1,13 @@
 // Benchmark for safe-tag
 const { performance } = require("perf_hooks");
-const { default: safeTag } = require("../dist/index.js");
+const { default: safeTag, unmaskTag } = require("../dist/index.js");
+const { fastTag, ultraFastTag, cachedTag } = require("../dist/fast.js");
 
 const ITERATIONS = 100000;
 
 console.log("=== safe-tag Benchmarks ===");
 console.log(`Running ${ITERATIONS} iterations per test...\n`);
 
-// Test data
 const testCases = [
   { name: "null", value: null },
   { name: "undefined", value: undefined },
@@ -19,36 +19,34 @@ const testCases = [
   { name: "Date", value: new Date() },
 ];
 
-// Native Object.prototype.toString for comparison
 const nativeToString = Object.prototype.toString;
 
-console.log("--- Baseline: Object.prototype.toString ---");
-for (const testCase of testCases) {
-  const start = performance.now();
-  for (let i = 0; i < ITERATIONS; i++) {
-    try {
-      nativeToString.call(testCase.value);
-    } catch (e) {
-      // Baseline may throw on hostile objects
+function runBench(name, fn, cases) {
+  console.log(`--- ${name} ---`);
+  for (const testCase of cases) {
+    const start = performance.now();
+    for (let i = 0; i < ITERATIONS; i++) {
+      try {
+        fn(testCase.value);
+      } catch (e) {
+        void e;
+      }
     }
+    const end = performance.now();
+    const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
+    console.log(`${testCase.name.padEnd(25)} ${opsPerSec.padStart(12)} ops/sec`);
   }
-  const end = performance.now();
-  const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
-  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
+  console.log("");
 }
 
-console.log("\n--- safeTag (safe wrapper) ---");
-for (const testCase of testCases) {
-  const start = performance.now();
-  for (let i = 0; i < ITERATIONS; i++) {
-    safeTag(testCase.value);
-  }
-  const end = performance.now();
-  const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
-  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
-}
+runBench("Baseline: Object.prototype.toString", (v) => nativeToString.call(v), testCases);
+runBench("safeTag (safe wrapper)", safeTag, testCases);
+runBench("unmaskTag (advanced revelation)", unmaskTag, testCases);
+runBench("fastTag (minimal wrapper)", fastTag, testCases);
+runBench("ultraFastTag (direct call)", ultraFastTag, testCases);
+runBench("cachedTag (WeakMap cache)", cachedTag, testCases.filter(c => c.value && typeof c.value === 'object'));
 
-console.log("\n--- Hostile Object Tests ---");
+console.log("--- Hostile Object Tests (safeTag) ---");
 const revokedProxy = (() => {
   const { proxy, revoke } = Proxy.revocable({}, {});
   revoke();
@@ -75,7 +73,7 @@ for (const testCase of hostileTests) {
   }
   const end = performance.now();
   const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
-  console.log(`${testCase.name.padEnd(20)} ${opsPerSec.padStart(10)} ops/sec`);
+  console.log(`${testCase.name.padEnd(25)} ${opsPerSec.padStart(12)} ops/sec`);
 }
 
 console.log("\n=== Benchmark Complete ===");

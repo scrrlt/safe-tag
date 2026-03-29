@@ -32,8 +32,8 @@ export function fastTag(value: unknown): string {
  * @param value - Any value to tag.
  * @returns The native "[object Type]" tag.
  */
-export function ultraFastTag(value: any): string {
-  return nativeToString.call(value);
+export function ultraFastTag(value: unknown): string {
+  return nativeToString.call(value as object);
 }
 
 const tagCache = new WeakMap<object, string>();

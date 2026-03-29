@@ -130,17 +130,20 @@
  ## API
  
  ### `safeTag(value: unknown): string` (default export)
- 
- - **Returns:** A string in the form `[object Type]`.
- - **Exception handling:** Guaranteed not to throw. For hostile objects (like revoked proxies), returns `"[object Object]"`.
- - **Behavior:** Returns the tag as the engine sees it. Respects `Symbol.toStringTag` masks and never mutates the input.
- 
- ### `unmaskTag(value: unknown): string`
- 
- Advanced API that attempts to reveal the underlying tag by temporarily mutating the object's own `Symbol.toStringTag` descriptor.
- 
- - **Risk:** May cause V8 to de-optimize the object (hidden class changes) due to descriptor mutation.
- - **Side effects:** Temporarily mutates `Symbol.toStringTag` on the object during the read, but is designed to restore the original descriptor and **never throws**. Falls back to `safeTag(value)` if unmasking fails.
+
+- **Returns:** A string in the form `[object Type]`.
+- **Performance:** High. Does not mutate inputs and avoids V8 de-optimizations.
+- **Exception handling:** Guaranteed not to throw. For hostile objects (like revoked proxies), returns `"[object Object]"`.
+- **Behavior:** Returns the tag as the engine sees it. Respects `Symbol.toStringTag` masks. **Recommended for 99% of use cases.**
+
+### `unmaskTag(value: unknown): string`
+
+Advanced API that attempts to reveal the underlying innate tag, even if it has been spoofed using an own `Symbol.toStringTag`.
+
+- **Risk:** May cause V8 to de-optimize the object (hidden class changes) due to temporary descriptor mutation.
+- **Usage:** **Should be used only when you need to bypass spoofed tags (e.g., in security-sensitive code).** Not needed for normal type checks.
+- **Innate detection:** Includes a fast, non-mutating path for common built-ins (Array, Date, RegExp, Map, Set, Promise, Function, Error) to avoid de-optimization when possible.
+- **Side effects:** Temporarily mutates `Symbol.toStringTag` on the object during the read if the innate fast-path is not available. Designed to restore the original descriptor and **never throws**. Falls back to `safeTag(value)` if unmasking fails.
  
  ### Performance variants (`safe-tag/fast`)
  
