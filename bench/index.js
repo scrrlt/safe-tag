@@ -28,7 +28,9 @@ function runBench(name, fn, cases) {
     for (let i = 0; i < ITERATIONS; i++) {
       try {
         fn(testCase.value);
-      } catch (e) {}
+      } catch (e) {
+        void e;
+      }
     }
     const end = performance.now();
     const opsPerSec = ((ITERATIONS / (end - start)) * 1000).toFixed(0);
