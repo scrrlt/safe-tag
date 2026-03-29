@@ -32,25 +32,30 @@ export function fastTag(value: unknown): string {
  * @param value - Any value to tag.
  * @returns The native "[object Type]" tag.
  */
-export function ultraFastTag(value: unknown): string {
-  return nativeToString.call(value as object);
-}
-
 const tagCache = new WeakMap<object, string>();
 
 /**
  * Cached tag lookup for objects using a WeakMap.
  * Best for repeated calls on the same objects.
  *
- * @param value - An object to tag.
+ * @param value - Any value to tag.
  * @returns The native "[object Type]" tag.
- * @throws {TypeError} if value is not an object or if toString fails.
+ *
+ * Notes: This function tolerates primitives and will not attempt to use the
+ * WeakMap cache for non-object values. This prevents a runtime TypeError when
+ * called by JavaScript consumers with primitives (e.g. `cachedTag(123)`).
  */
-export function cachedTag(value: object): string {
-  let tag = tagCache.get(value);
+export function cachedTag(value: unknown): string {
+  // Primitives cannot be used as WeakMap keys; handle them directly.
+  if (value === null || (typeof value !== "object" && typeof value !== "function")) {
+    return nativeToString.call(value as unknown as object);
+  }
+
+  const obj = value as object;
+  let tag = tagCache.get(obj);
   if (tag === undefined) {
-    tag = nativeToString.call(value);
-    tagCache.set(value, tag);
+    tag = nativeToString.call(obj);
+    tagCache.set(obj, tag);
   }
   return tag;
 }

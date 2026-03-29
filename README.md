@@ -142,16 +142,14 @@ Advanced API that attempts to reveal the underlying innate tag, even if it has b
 
 - **Risk:** May cause V8 to de-optimize the object (hidden class changes) due to temporary descriptor mutation.
 - **Usage:** **Should be used only when you need to bypass spoofed tags (e.g., in security-sensitive code).** Not needed for normal type checks.
-- **Innate detection:** Includes a fast, non-mutating path for common built-ins (Array, Date, RegExp, Map, Set, Promise, Function, Error) to avoid de-optimization when possible.
-- **Side effects:** Temporarily mutates `Symbol.toStringTag` on the object during the read if the innate fast-path is not available. Designed to restore the original descriptor and **never throws**. Falls back to `safeTag(value)` if unmasking fails.
- 
- ### Performance variants (`safe-tag/fast`)
- 
- For environments where inputs are trusted and performance is prioritized over resilience:
- 
- - **`fastTag`**: Minimal wrapper around `Object.prototype.toString.call()`. Fastest, but may throw on revoked proxies or hostile objects.
- - **`ultraFastTag`**: Zero-check variant that directly calls the native method.
- - **`cachedTag`**: Uses a `WeakMap` to cache tags for objects. Best for repeated calls on the same objects.
+- **Behavior change:** To improve robustness against hostile objects (like revoked proxies) `unmaskTag` now uses `safeTag` as a non-throwing filter and avoids descriptor mutation on values where `safeTag` returns the generic "[object Object]".
+
+### Performance variants (`safe-tag/fast`)
+
+For environments where inputs are trusted and performance is prioritized over resilience:
+
+- **`fastTag`**: Minimal wrapper around `Object.prototype.toString.call()`. Fastest, but may throw on revoked proxies or hostile objects.
+- **`cachedTag`**: Uses a `WeakMap` to cache tags for objects. Best for repeated calls on the same objects.
  
  ## Development and testing
  

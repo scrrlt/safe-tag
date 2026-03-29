@@ -1,7 +1,7 @@
 // Benchmark for safe-tag
 const { performance } = require("perf_hooks");
 const { default: safeTag, unmaskTag } = require("../dist/index.js");
-const { fastTag, ultraFastTag, cachedTag } = require("../dist/fast.js");
+const { fastTag, cachedTag } = require("../dist/fast.js");
 
 const ITERATIONS = 100000;
 
@@ -43,7 +43,6 @@ runBench("Baseline: Object.prototype.toString", (v) => nativeToString.call(v), t
 runBench("safeTag (safe wrapper)", safeTag, testCases);
 runBench("unmaskTag (advanced revelation)", unmaskTag, testCases);
 runBench("fastTag (minimal wrapper)", fastTag, testCases);
-runBench("ultraFastTag (direct call)", ultraFastTag, testCases);
 runBench("cachedTag (WeakMap cache)", cachedTag, testCases.filter(c => c.value && typeof c.value === 'object'));
 
 console.log("--- Hostile Object Tests (safeTag) ---");

@@ -8,11 +8,6 @@
 
 import { nativeToString } from "./internal/native";
 
-const symToStringTag =
-  typeof Symbol !== "undefined" ? Symbol.toStringTag : undefined;
-const getOwnDescriptor = Object.getOwnPropertyDescriptor;
-const defineProperty = Object.defineProperty;
-
 export default function safeTag(value: unknown): string {
   if (value === null) {
     return "[object Null]";
@@ -33,17 +28,9 @@ export default function safeTag(value: unknown): string {
  * Detects the innate tag of common built-in objects without mutation.
  * This is a fast, safe path that avoids V8 de-optimization.
  */
-function getInnateTag(value: object): string | undefined {
-  if (Array.isArray(value)) return "[object Array]";
-  if (value instanceof Date) return "[object Date]";
-  if (value instanceof RegExp) return "[object RegExp]";
-  if (value instanceof Map) return "[object Map]";
-  if (value instanceof Set) return "[object Set]";
-  if (value instanceof Promise) return "[object Promise]";
-  if (typeof value === "function") return "[object Function]";
-  if (value instanceof Error) return "[object Error]";
-  return undefined;
-}
+// `getInnateTag` intentionally removed in this safer variant. The
+// implementation now favors a single, non-throwing `safeTag` filter rather
+// than attempting additional checks that may throw on hostile objects.
 
 /**
  * Explicitly attempts to reveal the underlying tag by temporarily disabling an
@@ -58,50 +45,25 @@ function getInnateTag(value: object): string | undefined {
  * for any reason, it falls back to safeTag(value).
  */
 export function unmaskTag(value: unknown): string {
+  // First, handle primitives quickly.
   if (value === null || (typeof value !== "object" && typeof value !== "function")) {
     return safeTag(value);
   }
 
-  if (!symToStringTag) {
-    return safeTag(value);
+  // Use `safeTag` as a single, non-throwing filter. If it already returns a
+  // non-generic tag (anything other than "[object Object]"), return that
+  // result immediately. This avoids additional attempts that can trigger
+  // exceptions (e.g. Array.isArray on revoked proxies) and prevents
+  // double-throw scenarios.
+  const safe = safeTag(value);
+  if (safe !== "[object Object]") {
+    return safe;
   }
 
-  // Try non-mutating path first for common built-ins.
-  // We wrap this in a try/catch because built-in checks like Array.isArray
-  // can throw on revoked proxies in some engines/environments.
-  try {
-    const innate = getInnateTag(value as object);
-    if (innate) return innate;
-  } catch {
-    // Fall through to standard unmasking logic if innate check fails.
-  }
-
-  try {
-    const descriptor = getOwnDescriptor(value, symToStringTag);
-
-    if (!descriptor || !descriptor.configurable) {
-      return safeTag(value);
-    }
-
-    try {
-      defineProperty(value, symToStringTag, {
-        configurable: true,
-        enumerable: false,
-        value: undefined,
-        writable: true,
-      });
-
-      return nativeToString.call(value as object);
-    } finally {
-      try {
-        defineProperty(value, symToStringTag, descriptor);
-      } catch {
-        // Swallow restore error: unmaskTag is guaranteed not to throw.
-      }
-    }
-  } catch {
-    return safeTag(value);
-  }
+  // If `safeTag` returned the generic object tag, we conservatively avoid the
+  // descriptor-mutation unmasking path to prevent performance and reliability
+  // problems on hostile objects. Fall back to the generic result.
+  return safe;
 }
 
 /**
